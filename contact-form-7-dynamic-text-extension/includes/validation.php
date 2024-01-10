@@ -33,6 +33,22 @@ function wpcf7dtx_messages($messages)
 add_filter('wpcf7_messages', 'wpcf7dtx_messages');
 
 /**
+ * Add DTX Error Code to Config Validator
+ *
+ * @since 5.0.0
+ *
+ * @param array $error_codes A sequential array of available error codes in Contact Form 7.
+ *
+ * @return array A modified sequential array of available error codes in Contact Form 7.
+ */
+function wpcf7dtx_config_validator_available_error_codes($error_codes)
+{
+    $dtx_errors = array('dtx_disallowed');
+    return array_merge($error_codes, $dtx_errors);
+}
+add_filter('wpcf7_config_validator_available_error_codes', 'wpcf7dtx_config_validator_available_error_codes');
+
+/**
  * Validate DTX Form Fields
  *
  * Frontend validation for DTX form tags
@@ -167,6 +183,69 @@ function wpcf7dtx_validate_value($result, $value, $tag, $type = '')
  */
 function wpcf7dtx_validate($validator)
 {
+    // Check for sensitive form tags
+    $manager = WPCF7_FormTagsManager::get_instance();
+    $contact_form = $validator->contact_form();
+    $form = $contact_form->prop('form');
+    if (wpcf7_autop_or_not()) {
+        $form = $manager->replace_with_placeholders($form);
+        $form = wpcf7_autop($form);
+        $form = $manager->restore_from_placeholders($form);
+    }
+    $form = $manager->replace_all($form);
+    $tags = $manager->get_scanned_tags();
+    foreach ($tags as $tag) {
+        /** @var WPCF7_FormTag $tag */
+
+        // Only validate DTX formtags
+        if (in_array($tag->basetype, array_merge(
+            array('dynamictext', 'dynamichidden'), // Deprecated DTX form tags
+            array_keys(wpcf7dtx_config()) // DTX form tags
+        ))) {
+            // Check value for sensitive data
+            $default = $tag->get_option('defaultvalue', '', true);
+            if (!$default) {
+                $default = $tag->get_default_option(strval(reset($tag->values)));
+            }
+            if (
+                !empty($value = trim(wpcf7_get_hangover($tag->name, $default))) && // Has value
+                ($result = wpcf7dtx_validate_sensitive_value($value))['status'] // Has sensitive data
+            ) {
+                $validator->add_error('form.body', 'dtx_disallowed', array(
+                    'message' => sprintf(
+                        __('[%1$s %2$s]: Access to key "%3$s" in shortcode "%4$s" is disallowed by default. To allow access, add "%3$s" to the %5$s Allow List.', 'contact-form-7-dynamic-text-extension'),
+                        esc_html($tag->basetype),
+                        esc_html($tag->name),
+                        esc_html($result['key']),
+                        esc_html($result['shortcode']),
+                        esc_html($result['shortcode'] == 'CF7_get_current_user' ? __('User Data Key', 'contact-form-7-dynamic-text-extension') : __('Meta Key', 'contact-form-7-dynamic-text-extension'))
+                    ),
+                    'link' => wpcf7dtx_get_admin_settings_screen_url()
+                ));
+            }
+
+            // Check placeholder for sensitive data
+            if (
+                ($tag->has_option('placeholder') || $tag->has_option('watermark')) && // Using placeholder
+                !empty($placeholder = trim(html_entity_decode(urldecode($tag->get_option('placeholder', '', true)), ENT_QUOTES))) && // Has value
+                ($result = wpcf7dtx_validate_sensitive_value($placeholder))['status'] // Has sensitive data
+            ) {
+                $validator->add_error('form.body', 'dtx_disallowed', array(
+                    'message' => sprintf(
+                        __('[%1$s %2$s]: Access to key "%3$s" in shortcode "%4$s" is disallowed by default. To allow access, add "%3$s" to the %5$s Allow List.', 'contact-form-7-dynamic-text-extension'),
+                        esc_html($tag->basetype),
+                        esc_html($tag->name),
+                        esc_html($result['key']),
+                        esc_html($result['shortcode']),
+                        esc_html($result['shortcode'] == 'CF7_get_current_user' ? __('User Data Key', 'contact-form-7-dynamic-text-extension') : __('Meta Key', 'contact-form-7-dynamic-text-extension'))
+                    ),
+                    'link' => wpcf7dtx_get_admin_settings_screen_url()
+                ));
+            }
+        }
+    }
+
+    // Validate email address
     if (!$validator->is_valid()) {
         $contact_form = null;
         $form_tags = null;
@@ -231,3 +310,60 @@ function wpcf7dtx_validate($validator)
     }
 }
 add_action('wpcf7_config_validator_validate', 'wpcf7dtx_validate');
+
+/**
+ * Validate Field Value for Sensitive Data
+ *
+ * @since 5.0.0
+ *
+ * @see https://developer.wordpress.org/reference/functions/get_bloginfo/#description
+ *
+ * @param string $content The string to validate.
+ *
+ * @return array An associative array with keys `status` (bool), `shortcode` (string), and `key` (string).
+ * The value of `status` is true if the content is a shortcode that is attempting to access sensitive data. False
+ * otherwise. The value of `shortcode` is the the shortcode that is making the attempt if `status` is true. The
+ * value of `key` is the shortcode's `key` attribute of the attempt being made if `status` is true.
+ */
+function wpcf7dtx_validate_sensitive_value($content)
+{
+    $r = array(
+        'status' => false,
+        'shortcode' => '',
+        'key' => ''
+    );
+
+    // Parse the attributes.  [0] is the shortcode name. ['key'] is the key attribute
+    $atts = shortcode_parse_atts($content);
+    
+    // If we can't extract the atts, or the shortcode or `key` is not an att, don't validate
+    if( !is_array($atts) || !array_key_exists('key', $atts) || !array_key_exists('0', $atts) ) return $r;
+    
+    // Find the key and shortcode in question
+    $key = sanitize_text_field($atts['key']);
+    $shortcode = sanitize_text_field($atts['0']);
+
+    // If the shortcode or key value does not exist, don't validate
+    if( empty($shortcode) || empty($key) ) return $r;
+
+    $allowed = true;
+    switch( $shortcode ){
+        case 'CF7_get_custom_field':
+            $allowed = wpcf7dtx_post_meta_key_access_is_allowed( $key );
+            break;
+        case 'CF7_get_current_user':
+            $allowed = wpcf7dtx_user_data_access_is_allowed( $key );
+            break;
+        default:
+
+    }
+
+    if( !$allowed ){
+        $r['status'] = true;
+        $r['shortcode'] = $shortcode;
+        $r['key'] = $key;
+    }
+
+    return $r;
+
+}

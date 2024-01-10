@@ -1,5 +1,9 @@
 <?php
 
+// Include the Settings Page & Update Check
+include_once( 'admin/settings.php' );
+include_once( 'admin/update-check.php' );
+
 /**
  * Admin Scripts and Styles
  *

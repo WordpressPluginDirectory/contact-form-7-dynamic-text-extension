@@ -4,7 +4,7 @@
  * Plugin Name: Contact Form 7 - Dynamic Text Extension
  * Plugin URI: https://sevenspark.com/goods/contact-form-7-dynamic-text-extension
  * Description: This plugin extends Contact Form 7 by adding dynamic form fields that accept any shortcode to generate default values and placeholder text. Requires Contact Form 7.
- * Version: 4.1.0
+ * Version: 4.2.0
  * Author: SevenSpark, AuRise Creative
  * Author URI: https://sevenspark.com
  * License: GPL2
@@ -14,8 +14,8 @@
  */
 
 /*
-    Copyright 2010-2023 Chris Mavricos, SevenSpark <https://sevenspark.com>
-    Copyright 2022-2023 Tessa Watkins, AuRise Creative <https://aurisecreative.com>
+    Copyright 2010-2024 Chris Mavricos, SevenSpark <https://sevenspark.com>
+    Copyright 2022-2024 Tessa Watkins, AuRise Creative <https://aurisecreative.com>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as
@@ -32,13 +32,15 @@
 */
 
 // Define current version
-define('WPCF7DTX_VERSION', '4.1.0');
+define('WPCF7DTX_VERSION', '4.2.0');
 
 // Define root directory
 defined('WPCF7DTX_DIR') || define('WPCF7DTX_DIR', __DIR__);
 
 // Define root file
 defined('WPCF7DTX_FILE') || define('WPCF7DTX_FILE', __FILE__);
+
+define( 'WPCF7DTX_DATA_ACCESS_KB_URL', 'https://sevenspark.com/docs/contact-form-7-dynamic-text-extension/allow-data-access' );
 
 /**
  * Initialise Plugin
