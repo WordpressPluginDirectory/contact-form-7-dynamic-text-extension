@@ -3,7 +3,7 @@ Contributors: sevenspark, tessawatkinsllc
 Donate link: https://just1voice.com/donate/
 Tags: Contact Form 7, autofill, prepopulate, input, form field, contact form, text, hidden, input, dynamic, GET, POST, title, slug, auto-fill, pre-populate
 Tested up to: 6.4.2
-Stable tag: 4.2.0
+Stable tag: 4.2.1
 
 This plugin provides additional form tags for the Contact Form 7 plugin. It allows dynamic generation of content for text-based input fields like text, hidden, and email, checkboxes, radio buttons, and drop-down selections using any shortcode.
 
@@ -380,16 +380,27 @@ Please check out the [FAQ on our website](https://aurisecreative.com/docs/contac
 
 == Upgrade Notice ==
 
-= 4.2.0 =
-Extend functionality without losing your work!
+= 4.2.1 =
+Resolved the bug that prevented the `dynamic_date` shortcode from using `min`, `max`, and `step` attributes and added other allowable field attributes.
 
 == Changelog ==
+
+= 4.2.1 =
+
+* Feature: Allows text-based fields to use `autocapitalize` attribute
+* Feature: Allows text-based fields to use `autofocus` attribute
+* Feature: Allows text-based fields to use `list` attribute
+* Feature: Allows text-based fields to use `pattern` attribute
+* Feature: Allows textareas to use `wrap` attribute
+* Fix: Resolved the bug that prevented the `dynamic_date` shortcode from using `min`, `max`, and `step` attributes, [see support thread](https://wordpress.org/support/topic/dynamic_date-min-max-step-options-ignored/).
+* Fix: Added minimum version check for Contact Form 7, [see support thread](https://wordpress.org/support/topic/str_contains-is-php-8-0-only-broken-compatibility/).
+* Fix: Resolved an issue that used a function introduced in PHP 8 while plugin compatibility setting is currently still set to 7.4+, [see support thread](https://wordpress.org/support/topic/str_contains-is-php-8-0-only-broken-compatibility/).
 
 = 4.2.0 =
 
 * Security Update: ** Please be sure to review this doc, as you may need to adjust the settings: https://sevenspark.com/docs/contact-form-7-dynamic-text-extension/allow-data-access **
 * Feature: Added Settings Screen with Allow Lists
-* Feature: Added Form Scanner 
+* Feature: Added Form Scanner
 * Feature: Added Allow List key validation in CF7 Form Validator
 
 = 4.1.0 =
