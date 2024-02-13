@@ -3,7 +3,7 @@ Contributors: sevenspark, tessawatkinsllc
 Donate link: https://just1voice.com/donate/
 Tags: Contact Form 7, autofill, prepopulate, input, form field, contact form, text, hidden, input, dynamic, GET, POST, title, slug, auto-fill, pre-populate
 Tested up to: 6.4.2
-Stable tag: 4.2.1
+Stable tag: 4.2.2
 
 This plugin provides additional form tags for the Contact Form 7 plugin. It allows dynamic generation of content for text-based input fields like text, hidden, and email, checkboxes, radio buttons, and drop-down selections using any shortcode.
 
@@ -380,10 +380,14 @@ Please check out the [FAQ on our website](https://aurisecreative.com/docs/contac
 
 == Upgrade Notice ==
 
-= 4.2.1 =
-Resolved the bug that prevented the `dynamic_date` shortcode from using `min`, `max`, and `step` attributes and added other allowable field attributes.
+= 4.2.2 =
+Cache compatibility JavaScript triggers the custom `dtx_init` event on enabled input fields.
 
 == Changelog ==
+
+= 4.2.2 =
+
+* Feature: Cache compatibility JavaScript triggers the custom `dtx_init` event on enabled input fields, [see support thread](https://wordpress.org/support/topic/dynamic_text-cf7_url-dont-fire-onchange-event/).
 
 = 4.2.1 =
 
