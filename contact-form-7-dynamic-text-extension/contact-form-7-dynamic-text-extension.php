@@ -4,7 +4,7 @@
  * Plugin Name: Contact Form 7 - Dynamic Text Extension
  * Plugin URI: https://sevenspark.com/goods/contact-form-7-dynamic-text-extension
  * Description: This plugin extends Contact Form 7 by adding dynamic form fields that accept any shortcode to generate default values and placeholder text. Requires Contact Form 7.
- * Version: 4.2.2
+ * Version: 4.2.3
  * Author: SevenSpark, AuRise Creative
  * Author URI: https://sevenspark.com
  * License: GPL2
@@ -31,7 +31,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-define('WPCF7DTX_VERSION', '4.2.2'); // Define current version of DTX
+define('WPCF7DTX_VERSION', '4.2.3'); // Define current version of DTX
 define('WPCF7DTX_MINVERSION', '5.7'); // The minimum version of CF7 required to use all features
 defined('WPCF7DTX_DIR') || define('WPCF7DTX_DIR', __DIR__); // Define root directory
 defined('WPCF7DTX_FILE') || define('WPCF7DTX_FILE', __FILE__); // Define root file
@@ -269,7 +269,6 @@ function wpcf7dtx_shortcode_handler($tag)
     $atts['name'] = $tag->name;
     $atts['id'] = strval($tag->get_id_option());
     $atts['tabindex'] = $tag->get_option('tabindex', 'signed_int', true);
-    $atts['size'] = $tag->get_size_option('40');
     $atts['class'] = explode(' ', wpcf7_form_controls_class($atts['type']));
     $atts['class'][] = 'wpcf7dtx';
     $atts['class'][] = sanitize_html_class('wpcf7dtx-' . $atts['type']);
@@ -361,10 +360,14 @@ function wpcf7dtx_shortcode_handler($tag)
         if ($atts['type'] == 'select' && $tag->has_option('include_blank')) {
             $atts['placeholder'] = wpcf7dtx_array_has_key('placeholder', $atts, __('&#8212;Please choose an option&#8212;', 'contact-form-7-dynamic-text-extension'));
         }
+        if ($atts['type'] == 'select') {
+            $atts['size'] = $tag->get_size_option('1');
+        }
     } else {
         /**
          * Configuration for text-based fields
          */
+        $atts['size'] = $tag->get_size_option('40');
         $atts['list'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('list', '', true)), ENT_QUOTES));
         $atts['autocapitalize'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('autocapitalize', '', true)), ENT_QUOTES));
         $atts['pattern'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('pattern', '', true)), ENT_QUOTES));
