@@ -2,8 +2,8 @@
 
 /**
  * Plugin Name: Contact Form 7 - Dynamic Text Extension
- * Description: Extends Contact Form 7 by adding dynamic form fields that accept any shortcode to generate default values and placeholder text. Requires Contact Form 7.
- * Version: 4.3.0
+ * Description: Extends Contact Form 7 by adding dynamic form fields that accepts shortcodes to prepopulate form fields with default values and dynamic placeholders.
+ * Version: 4.3.1
  * Author: AuRise Creative, SevenSpark
  * Author URI: https://aurisecreative.com
  * Plugin URI: https://aurisecreative.com/products/wordpress-plugin/contact-form-7-dynamic-text-extension/
@@ -31,7 +31,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-define('WPCF7DTX_VERSION', '4.3.0'); // Define current version of DTX
+define('WPCF7DTX_VERSION', '4.3.1'); // Define current version of DTX
 define('WPCF7DTX_MINVERSION', '5.7'); // The minimum version of CF7 required to use mail validator
 defined('WPCF7DTX_DIR') || define('WPCF7DTX_DIR', __DIR__); // Define root directory
 defined('WPCF7DTX_FILE') || define('WPCF7DTX_FILE', __FILE__); // Define root file
@@ -309,13 +309,14 @@ function wpcf7dtx_shortcode_handler($tag)
         //Reverse engineer what JS did (converted quotes to HTML entities --> URL encode) then sanitize
         $placeholder = html_entity_decode(urldecode($tag->get_option('placeholder', '', true)), ENT_QUOTES);
         if ($placeholder) {
-            //If a different placeholder text has been specified, set both attributes
+            // If a different placeholder text has been specified, set both attributes
             $placeholder = wpcf7dtx_get_dynamic($placeholder, false, $sanitize_type);
             $atts['placeholder'] = $placeholder;
             $atts['value'] = $value;
         } else {
-            //Default behavior of using the value as the placeholder
+            // Default behavior of using the value as the placeholder
             $atts['placeholder'] = $value;
+            $atts['value'] = '';
         }
     } else {
         $atts['value'] = $value;
