@@ -3,7 +3,7 @@ Contributors: sevenspark, tessawatkinsllc
 Donate link: https://just1voice.com/donate/
 Tags: Contact Form 7, autofill, prepopulate, dynamic form, form field
 Tested up to: 6.5
-Stable tag: 4.3.1
+Stable tag: 4.4.0
 
 Extends Contact Form 7 by adding dynamic form fields that accepts shortcodes to prepopulate form fields with default values and dynamic placeholders.
 
@@ -40,6 +40,8 @@ For over 10 years, DTX only handled `<input type="text" />` and `<input type="hi
 * submit (yes, a submit button where you can have dynamic text!)
 
 The possibilities are endless!
+
+(View Demo)[PREVIEW_URL]
 
 ## WHAT DOES IT DO? ##
 
@@ -320,6 +322,14 @@ Learn more and see examples from [the DTX Knowledge base](https://aurisecreative
 
 == Installation ==
 
+= Minimum Requirements =
+
+To ensure your WordPress installation meets these requirements, you can login to your WordPress website and navigate to *Tools > Site Health* and click on the *Info* tab. Expand the *WordPress*, *Active Plugins*, and *Server* accordions and compare that information with the details below.
+
+* WordPress version 5.5 or greater
+* PHP version 7.4 or greater
+* [Contact Form 7](https://wordpress.org/plugins/contact-form-7/) version 5.7 or greater
+
 There are three (3) ways to install my plugin: automatically, upload, or manually.
 
 = Install Method 1: Automatic Installation =
@@ -380,10 +390,20 @@ Please check out the [FAQ on our website](https://aurisecreative.com/docs/contac
 
 == Upgrade Notice ==
 
-= 4.3.1 =
-Fixed user-reported bugs regarding `dynamic_checkbox` accepting multiple default values, mail template validator, and some PHP warnings. See [the changelog](https://plugins.trac.wordpress.org/browser/contact-form-7-dynamic-text-extension/trunk/changelog.txt) for more details.
+= 4.4.0 =
+Introducing dynamic attributes and the new `dynamic_label` form tag! See [the changelog](https://plugins.trac.wordpress.org/browser/contact-form-7-dynamic-text-extension/trunk/changelog.txt) for more details.
 
 == Changelog ==
+
+= 4.4.0 =
+
+* Update: Added *Contact Form 7* (CF7) as a requirement as introduced in WordPress version 6.5. This plugin cannot be activated until CF7 is installed and activated.
+* Feature: introduced `dynamic_label` form tag. For usage details, see the [knowledge base](https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/form-tags/dynamic-label/?utm_source=wordpress.org&utm_medium=link&utm_campaign=contact-form-7-dynamic-text-extension&utm_content=readme)
+* Feature: updated the following attributes to be dynamic: `autocapitalize`, `autocomplete`, `autofocus`, `cols`, `disabled`, `list`, `max`, `maxlength`, `min`, `minlength`, `pattern`, `readonly`, `size`, and `step`. For usage details, see the [knowledge base](https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/dynamic-attributes/?utm_source=wordpress.org&utm_medium=link&utm_campaign=contact-form-7-dynamic-text-extension&utm_content=readme)
+* Update: Updated the form tag generator for checkboxes and radio buttons to include documentation for the `default` attribute.
+* Update: Updated the form tag generator with fields for `min`, `max`, `step`, `minlength`, `maxlength`, and `autocomplete` for appropriate form tags. The `autocomplete` and `autocapitalize` are text fields that uses a `datalist` because I always forget those things...
+* Update: Increased the tag generator size to accommodate the new attributes.
+* Update: Some form tag generators display the generated form tag in a `textarea` to accommodate lengthy generated form tags.
 
 = 4.3.1 =
 

@@ -3,7 +3,8 @@
 /**
  * Plugin Name: Contact Form 7 - Dynamic Text Extension
  * Description: Extends Contact Form 7 by adding dynamic form fields that accepts shortcodes to prepopulate form fields with default values and dynamic placeholders.
- * Version: 4.3.1
+ * Version: 4.4.0
+ * Text Domain: contact-form-7-dynamic-text-extension
  * Author: AuRise Creative, SevenSpark
  * Author URI: https://aurisecreative.com
  * Plugin URI: https://aurisecreative.com/products/wordpress-plugin/contact-form-7-dynamic-text-extension/
@@ -11,7 +12,7 @@
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 5.5
  * Requires PHP: 7.4
- * Text Domain: contact-form-7-dynamic-text-extension
+ * Requires Plugins: contact-form-7
  *
  * @copyright Copyright (c) 2010-2024 Chris Mavricos, SevenSpark <https://sevenspark.com>
  * @copyright Copyright (c) 2022-2024 Tessa Watkins, AuRise Creative <https://aurisecreative.com>
@@ -31,7 +32,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-define('WPCF7DTX_VERSION', '4.3.1'); // Define current version of DTX
+define('WPCF7DTX_VERSION', '4.4.0'); // Define current version of DTX
 define('WPCF7DTX_MINVERSION', '5.7'); // The minimum version of CF7 required to use mail validator
 defined('WPCF7DTX_DIR') || define('WPCF7DTX_DIR', __DIR__); // Define root directory
 defined('WPCF7DTX_FILE') || define('WPCF7DTX_FILE', __FILE__); // Define root file
@@ -162,6 +163,11 @@ function wpcf7dtx_config()
                 'title' => __('dynamic submit', 'contact-form-7-dynamic-text-extension'), //title
                 'options' => array(),
                 'description' =>  __('a submit button', 'contact-form-7-dynamic-text-extension')
+            ),
+            'dynamic_label' => array(
+                'title' => __('dynamic label', 'contact-form-7-dynamic-text-extension'), //title
+                'options' => array(),
+                'description' =>  __('a label element', 'contact-form-7-dynamic-text-extension')
             )
         );
     }
@@ -193,6 +199,10 @@ function wpcf7dtx_add_shortcodes()
             case 'submit':
             case 'reset':
                 $callback = 'wpcf7dtx_button_shortcode_handler';
+                $features['name-attr'] = false;
+                break;
+            case 'label':
+                $callback = 'wpcf7dtx_label_shortcode_handler';
                 $features['name-attr'] = false;
                 break;
             default:
@@ -278,26 +288,35 @@ function wpcf7dtx_shortcode_handler($tag)
     } else {
         $atts['aria-invalid'] = 'false';
     }
-    if ($tag->has_option('readonly')) {
-        $atts['readonly'] = 'readonly';
-    }
-
-    // Dynamically determine disabled attribute, remove if invalid
-    $atts['disabled'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('disabled', '', true)), ENT_QUOTES));
-    if ($atts['disabled'] != 'disabled') {
-        unset($atts['disabled']);
-    }
-
-    // Dynamically determine autofocus attribute, remove if invalid
-    $atts['autofocus'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('autofocus', '', true)), ENT_QUOTES));
-    if ($atts['autofocus'] != 'autofocus') {
-        unset($atts['autofocus']);
-    }
 
     // Add required attribute to applicable input types
     if ($tag->is_required() && !in_array($atts['type'], array('hidden', 'quiz'))) {
         $atts['aria-required'] = 'true';
         $atts['required'] = 'required';
+    }
+
+    /**
+     * Attributes for all fields
+     *
+     * Any attributes that are not allowed on specific elements will be stripped during escaping.
+     * See the `wpcf7dtx_get_allowed_field_properties()` for details.
+     */
+    $dynamic_atts = array('autofocus', 'disabled', 'readonly');
+    foreach ($dynamic_atts as $dynamic_att) {
+        // Don't override existing attributes
+        if (!array_key_exists($dynamic_att, $atts) && $tag->has_option($dynamic_att)) {
+            switch ($dynamic_att) {
+                default:
+                    $atts[$dynamic_att] = wpcf7dtx_get_dynamic(false, $tag, 'text', $dynamic_att); // Get dynamic attribute
+                    if ($atts[$dynamic_att] === '') {
+                        $atts[$dynamic_att] = $dynamic_att;  // Empty values are valid since boolean values just need to exist
+                    }
+                    if ($atts[$dynamic_att] !== $dynamic_att) {
+                        unset($atts[$dynamic_att]); // Remove attribute if it doesn't equal it's own name
+                    }
+                    break;
+            }
+        }
     }
 
     // Evaluate the dynamic value
@@ -363,38 +382,111 @@ function wpcf7dtx_shortcode_handler($tag)
             $atts['placeholder'] = wpcf7dtx_array_has_key('placeholder', $atts, __('&#8212;Please choose an option&#8212;', 'contact-form-7-dynamic-text-extension'));
         }
         if ($atts['type'] == 'select') {
-            $atts['size'] = $tag->get_size_option('1');
+            $atts['size'] = wpcf7dtx_get_dynamic(false, $tag, 'text', 'size'); // Get dynamic attribute
+            if ($atts['size'] === '') {
+                $atts['size'] = $tag->get_size_option('1'); // Set default value
+            }
         }
     } else {
         /**
-         * Configuration for text-based fields
+         * Attributes for text-based fields
+         *
+         * Any attributes that are not allowed on specific elements will be stripped during escaping.
+         * See the `wpcf7dtx_get_allowed_field_properties()` for details.
          */
-        $atts['size'] = $tag->get_size_option('40');
-        $atts['list'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('list', '', true)), ENT_QUOTES));
-        $atts['autocapitalize'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('autocapitalize', '', true)), ENT_QUOTES));
-        $atts['pattern'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('pattern', '', true)), ENT_QUOTES));
-        $atts['min'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('min', '', true)), ENT_QUOTES));
-        $atts['max'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('max', '', true)), ENT_QUOTES));
-        $atts['step'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('step', '', true)), ENT_QUOTES));
+        $dynamic_atts = array('autocapitalize', 'autocomplete', 'cols', 'list', 'max', 'maxlength', 'min', 'minlength', 'pattern', 'rows', 'size', 'step');
+        foreach ($dynamic_atts as $dynamic_att) {
+            // Don't override existing attributes
+            if (!array_key_exists($dynamic_att, $atts) && $tag->has_option($dynamic_att)) {
+                $atts[$dynamic_att] = wpcf7dtx_get_dynamic(false, $tag, 'text', $dynamic_att); // Get dynamic attribute
+                switch ($dynamic_att) {
+                    case 'autocapitalize':
+                        if (!in_array($atts[$dynamic_att], array('none', 'off', 'on', 'sentences', 'words', 'characters'))) {
+                            unset($atts[$dynamic_att]); // Remove if invalid
+                        }
+                        break;
+                    case 'autocomplete':
+                        // Autocomplete attribute
+                        if ($atts['type'] == 'hidden') {
+                            $atts['autocomplete'] = 'off'; // Always disable for hidden fields
+                        } else {
+                            // Disable autocomplete for this field if a value has been specified
+                            $atts['autocomplete'] = $atts['value'] ? 'off' : $atts['autocomplete']; // Get dynamic attribute // Get dynamic attribute
+                        }
+                        break;
+                    case 'maxlength':
+                        if ($atts[$dynamic_att] === '' || !is_numeric($atts[$dynamic_att])) {
+                            $atts[$dynamic_att] = $tag->get_maxlength_option(); // Set default if empty or invalid
+                        }
+                        break;
+                    case 'minlength':
+                        if ($atts[$dynamic_att] === '' || !is_numeric($atts[$dynamic_att])) {
+                            $atts[$dynamic_att] = $tag->get_minlength_option(); // Set default if empty or invalid
+                        }
+                        break;
+                    case 'cols':
+                        if ($atts[$dynamic_att] === '' || !is_numeric($atts[$dynamic_att])) {
+                            $atts[$dynamic_att] = $tag->get_cols_option('40'); // Set default if empty or invalid
+                        }
+                        break;
+                    case 'rows':
+                        if ($atts[$dynamic_att] === '' || !is_numeric($atts[$dynamic_att])) {
+                            $atts[$dynamic_att] = $tag->get_rows_option('10'); // Set default if empty or invalid
+                        }
+                        break;
+                    case 'size':
+                        if ($atts[$dynamic_att] === '' || !is_numeric($atts[$dynamic_att])) {
+                            $atts[$dynamic_att] = $tag->get_size_option('40'); // Set default if empty or invalid
+                        }
+                        break;
+                    case 'wrap':
+                        if (!in_array($atts[$dynamic_att], array('hard', 'soft'))) {
+                            unset($atts[$dynamic_att]); // Remove if invalid
+                        }
+                        break;
+                    case 'max':
+                    case 'min':
+                        // Do nothing
+                        break;
+                    default:
+                        if ($atts[$dynamic_att] === '') {
+                            unset($atts[$dynamic_att]); // Remove attribute if empty
+                        }
+                        break;
+                }
+            }
+        }
 
-        // Min and Max length attributes
-        $atts['maxlength'] = $tag->get_maxlength_option();
-        $atts['minlength'] = $tag->get_minlength_option();
-        if ($atts['maxlength'] && $atts['minlength'] && $atts['maxlength'] < $atts['minlength']) {
+        // Validate Min and Max length attributes (should always be numeric)
+        if ($atts['maxlength'] && $atts['minlength'] && intval($atts['maxlength']) < intval($atts['minlength'])) {
             unset($atts['maxlength'], $atts['minlength']);
-        }
-
-        // Autocomplete attribute
-        if ($atts['type'] == 'hidden') {
-            $atts['autocomplete'] = 'off'; // Always disable for hidden fields
         } else {
-            // Disable autocomplete for this field if a dynamic value has been specified
-            $atts['autocomplete'] = $atts['value'] ? 'off' : $tag->get_option('autocomplete', '[-0-9a-zA-Z]+', true);
+            /**
+             * The `maxlength` attribute must be an integer with a value of 0 or higher
+             *
+             * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/maxlength
+             */
+            if (!is_numeric($atts['maxlength']) || intval($atts['maxlength']) < 0) {
+                unset($atts['maxlength']);
+            }
+            /**
+             * The `minlength` attribute must be an integer with a value of 0 or higher
+             *
+             * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/minlength
+             */
+            if (!is_numeric($atts['minlength']) || intval($atts['minlength']) < 0) {
+                unset($atts['minlength']);
+            }
         }
 
+        // Validate Min and Max attributes if numeric
+        if (is_numeric($atts['max']) && is_numeric($atts['min']) && floatval($atts['max']) < floatval($atts['min'])) {
+            unset($atts['max'], $atts['min']);
+        }
+
+        // Client-side validation by type
         switch ($atts['type']) {
             case 'range':
-                // Client-side validation by type
                 $atts['class'][] =  'wpcf7-validates-as-number';
                 break;
             case 'date':
@@ -402,17 +494,7 @@ function wpcf7dtx_shortcode_handler($tag)
             case 'email':
             case 'url':
             case 'tel':
-                // Client-side validation by type
                 $atts['class'][] =  sanitize_html_class('wpcf7-validates-as-' . $atts['type']);
-                break;
-            case 'textarea':
-                // Attributes unique to textareas
-                $atts['cols'] = $tag->get_cols_option('40');
-                $atts['rows'] = $tag->get_rows_option('10');
-                $atts['wrap'] = $tag->get_option('wrap', '', true);
-                if (!in_array($atts['wrap'], array('hard', 'soft'))) {
-                    unset($atts['wrap']);
-                }
                 break;
         }
     }
@@ -535,6 +617,51 @@ function wpcf7dtx_button_shortcode_handler($tag)
     return wp_kses(
         wpcf7dtx_input_html($atts),
         array('input' => wpcf7dtx_get_allowed_field_properties($atts['type']))
+    );
+}
+
+/**
+ * Form Tag Handler for Dynamic Label
+ *
+ * @param WPCF7_FormTag $tag Current Contact Form 7 tag object
+ *
+ * @return string HTML output of the shortcode
+ */
+function wpcf7dtx_label_shortcode_handler($tag)
+{
+    $atts = array();
+    $atts['id'] = strval($tag->get_id_option());
+    $atts['class'] = wpcf7_form_controls_class('wpcf7dtx wpcf7dtx-label');
+    $atts['for'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('for', '', true)), ENT_QUOTES)); // Get dynamic attribute
+
+    // Page load attribute
+    if ($tag->has_option('dtx_pageload') && is_array($tag->raw_values) && count($tag->raw_values)) {
+        $atts['data-dtx-value'] = rawurlencode(sanitize_text_field($tag->raw_values[0]));
+        $atts['class'] .= ' dtx-pageload';
+        if (wp_style_is('wpcf7dtx', 'registered') && !wp_script_is('wpcf7dtx', 'queue')) {
+            // If already registered, just enqueue it
+            wp_enqueue_script('wpcf7dtx');
+        } elseif (!wp_style_is('wpcf7dtx', 'registered')) {
+            // If not registered, do that first, then enqueue it
+            wpcf7dtx_enqueue_frontend_assets();
+            wp_enqueue_script('wpcf7dtx');
+        }
+    }
+
+    // Wrap up class attribute
+    $atts['class'] = $tag->get_class_option($atts['class']);
+
+    // Output the form field HTML
+    return wp_kses(
+        sprintf(
+            '<label %s>%s</label>',
+            wpcf7dtx_format_atts($atts),
+            wpcf7dtx_get_dynamic(false, $tag) // Evaluate the dynamic label text
+        ),
+        array_merge(
+            wp_kses_allowed_html('data'), // Get allowed HTML for inline data
+            array('label' => wpcf7dtx_get_allowed_field_properties('label')) // Include our label field
+        )
     );
 }
 
