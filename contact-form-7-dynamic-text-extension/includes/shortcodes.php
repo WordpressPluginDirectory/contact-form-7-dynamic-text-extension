@@ -37,6 +37,8 @@ add_action('init', 'wpcf7dtx_init_shortcodes'); //Add init hook to add shortcode
 /**
  * Get Variable from $_GET Array
  *
+ * @shortcode CF7_GET
+ *
  * @see https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/shortcodes/dtx-shortcode-php-get-variables/
  *
  * @param array $atts Optional. An associative array of shortcode attributes. Default is an empty array.
@@ -67,6 +69,8 @@ function wpcf7dtx_get($atts = array())
 /**
  * Get Variable from $_POST Array
  *
+ * @shortcode CF7_POST
+ *
  * @see https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/shortcodes/dtx-shortcode-php-post-variables/
  *
  * @param array $atts Optional. An associative array of shortcode attributes. Default is an empty array.
@@ -95,6 +99,8 @@ function wpcf7dtx_post($atts = array())
 
 /**
  * Get Current URL or Part
+ *
+ * @shortcode CF7_URL
  *
  * @see https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/shortcodes/dtx-shortcode-current-url/
  *
@@ -158,6 +164,8 @@ function wpcf7dtx_url($atts = array())
 /**
  * Get Referrering URL
  *
+ * @shortcode CF7_referrer
+ *
  * @see https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/shortcodes/dtx-shortcode-referrer-url/
  *
  * @param array $atts Optional. An associative array of shortcode attributes. Default is an empty array.
@@ -188,6 +196,8 @@ function wpcf7dtx_referrer($atts = array())
 /**
  * Get Variable from Bloginfo
  *
+ * @shortcode CF7_bloginfo
+ *
  * @see https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/shortcodes/dtx-shortcode-post-page-variables/
  *
  * @param array $atts Optional. An associative array of shortcode attributes. Default is an empty array.
@@ -216,7 +226,9 @@ function wpcf7dtx_bloginfo($atts = array())
 /**
  * Get Variable from a Post Object
  *
- * @link https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/shortcodes/dtx-shortcode-post-page-variables/
+ * @shortcode CF7_get_post_var
+ *
+ * @see https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/shortcodes/dtx-shortcode-post-page-variables/
  *
  * @param array $atts Optional. An associative array of shortcode attributes. Default is an empty array.
  *
@@ -244,8 +256,8 @@ function wpcf7dtx_get_post_var($atts = array())
         default:
             break;
     }
-    $atts['post_id'] = wpcf7dtx_get_post_id($atts['post_id']);
-    $raw = $atts['post_id'] ? get_post_field($key, $atts['post_id']) : '';
+    $atts['post_id'] = wpcf7dtx_validate_post_id($atts['post_id']);
+    $raw = get_post_field($key, $atts['post_id']);
     return apply_filters(
         'wpcf7dtx_shortcode', // DTX built-in shortcode hook
         apply_filters('wpcf7dtx_escape', $raw, $atts['obfuscate']), // Sanitized & escaped value to output
@@ -257,6 +269,8 @@ function wpcf7dtx_get_post_var($atts = array())
 
 /**
  * Get Value from Post Meta Field
+ *
+ * @shortcode CF7_get_custom_field
  *
  * @see  https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/shortcodes/dtx-shortcode-post-meta-custom-fields/
  *
@@ -280,7 +294,7 @@ function wpcf7dtx_get_custom_field($atts = array())
     }
 
     $key = apply_filters('wpcf7dtx_sanitize', $atts['key'], 'text');
-    $atts['post_id'] = wpcf7dtx_get_post_id($atts['post_id']);
+    $atts['post_id'] = wpcf7dtx_validate_post_id($atts['post_id']);
     $raw = $atts['post_id'] && $key ? get_post_meta($atts['post_id'], $key, true) : '';
     return apply_filters(
         'wpcf7dtx_shortcode', // DTX built-in shortcode hook
@@ -294,9 +308,11 @@ function wpcf7dtx_get_custom_field($atts = array())
 /**
  * Get Variable from the Current Object
  *
+ * @shortcode CF7_get_current_var
+ *
  * @since 3.4.0
  *
- * @link https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/shortcodes/dtx-shortcode-current-variables/
+ * @see https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/shortcodes/dtx-shortcode-current-variables/
  *
  * @param array $atts Optional. An associative array of shortcode attributes. Default is an empty array.
  *
@@ -430,6 +446,8 @@ function wpcf7dtx_get_current_var($atts = array())
  *
  * Retreives data from the `users` and `usermeta` tables.
  *
+ * @shortcode CF7_get_current_user
+ *
  * @see https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/shortcodes/dtx-shortcode-current-user-user-meta/
  *
  * @param array $atts Optional. An associative array of shortcode attributes. Default is an empty array.
@@ -466,7 +484,9 @@ function wpcf7dtx_get_current_user($atts = array())
 /**
  * Get Attachment
  *
- * Retreives an attachment ID or absolute URL depending on attributes
+ * Retreives an attachment ID or absolute URL depending on attributes.
+ *
+ * @shortcode CF7_get_attachment
  *
  * @since 3.1.0
  *
@@ -488,7 +508,7 @@ function wpcf7dtx_get_attachment($atts = array())
 
     // No attachment ID was provided, check for post ID to get it's featured image
     if (empty($atts['id'])) {
-        if ($atts['post_id'] = wpcf7dtx_get_post_id($atts['post_id'])) {
+        if ($atts['post_id'] = wpcf7dtx_validate_post_id($atts['post_id'])) {
             //If a post ID was provided, get it's featured image
             $atts['id'] = get_post_thumbnail_id($atts['post_id']);
         }
@@ -524,6 +544,8 @@ function wpcf7dtx_get_attachment($atts = array())
  *
  * Retreives the value of a cookie
  *
+ * @shortcode CF7_get_cookie
+ *
  * @since 3.3.0
  *
  * @see https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/shortcodes/dtx-shortcode-cookie/
@@ -554,6 +576,8 @@ function wpcf7dtx_get_cookie($atts = array())
  *
  * Retreives a list of taxonomy values
  *
+ * @shortcode CF7_get_taxonomy
+ *
  * @since 3.3.0
  *
  * @see https://aurisecreative.com/docs/contact-form-7-dynamic-text-extension/shortcodes/dtx-shortcode-taxonomy/
@@ -571,7 +595,7 @@ function wpcf7dtx_get_taxonomy($atts = array())
         'fields' => 'names', // Return an array of term names
         'obfuscate' => '' // Optionally obfuscate returned value
     ), array_change_key_case((array)$atts, CASE_LOWER));
-    $atts['post_id'] = wpcf7dtx_get_post_id($atts['post_id']);
+    $atts['post_id'] = wpcf7dtx_validate_post_id($atts['post_id']);
     $fields = apply_filters('wpcf7dtx_sanitize', $atts['fields'], 'key');
     $raw = '';
     $value = '';
@@ -598,7 +622,9 @@ function wpcf7dtx_get_taxonomy($atts = array())
 /**
  * Get Theme Customization Option
  *
- * Retreives theme modification value for the active theme
+ * Retreives theme modification value for the active theme.
+ *
+ * @shortcode CF7_get_theme_option
  *
  * @since 3.3.0
  *
@@ -634,6 +660,8 @@ function wpcf7dtx_get_theme_option($atts = array())
  * GUID Field
  *
  * Generate a random GUID (globally unique identifier)
+ *
+ * @shortcode CF7_guid
  *
  * @since 3.1.0
  *

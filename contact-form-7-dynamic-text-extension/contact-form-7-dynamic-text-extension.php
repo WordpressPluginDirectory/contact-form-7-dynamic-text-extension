@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Contact Form 7 - Dynamic Text Extension
  * Description: Extends Contact Form 7 by adding dynamic form fields that accepts shortcodes to prepopulate form fields with default values and dynamic placeholders.
- * Version: 4.5.0
+ * Version: 4.5.1
  * Text Domain: contact-form-7-dynamic-text-extension
  * Author: AuRise Creative, SevenSpark
  * Author URI: https://aurisecreative.com
@@ -32,7 +32,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-define('WPCF7DTX_VERSION', '4.5.0'); // Define current version of DTX
+define('WPCF7DTX_VERSION', '4.5.1'); // Define current version of DTX
 define('WPCF7DTX_MINVERSION', '5.7'); // The minimum version of CF7 required to use mail validator
 defined('WPCF7DTX_DIR') || define('WPCF7DTX_DIR', __DIR__); // Define root directory
 defined('WPCF7DTX_FILE') || define('WPCF7DTX_FILE', __FILE__); // Define root file

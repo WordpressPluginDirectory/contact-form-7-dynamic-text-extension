@@ -159,15 +159,70 @@ function wpcf7dtx_obfuscate($value = '')
 add_filter('wpcf7dtx_obfuscate', 'wpcf7dtx_obfuscate', 10, 1);
 
 /**
- * Get Post ID
+ * Validate Post ID
+ *
+ * Sanitizes or gets the post id and then checks if the current user can access the post.
+ *
+ * @since 4.5.1
+ *
+ * @param int|WP_Post|null|false $post_id Optional. Post ID or post object. Defaults
+ *      to global $post.
+ * @param string $context Optional. The context in which type of value to return on
+ *      failure. Options are `acf` and `dtx`. Default is `dtx`.
+ *
+ * @return int|WP_Post|null|false The `$post_id` parameter on sucess, 0 otherwise.
+ */
+function wpcf7dtx_validate_post_id($post_id = null, $context = 'dtx')
+{
+    return wpcf7dtx_user_can_view_post(wpcf7dtx_get_post_id($post_id, $context));
+}
+
+/**
+ * Checks if Current User Can Access Post
+ *
+ * Returns the post id on the following conditions:
+ *  1. If the post is publicly published and is a
+ *
+ * @see https://developer.wordpress.org/reference/functions/is_post_publicly_viewable/
+ * @see https://developer.wordpress.org/reference/functions/post_password_required/
+ *
+ * @since 4.5.1
+ *
+ * @param int|WP_Post|null|false $post_id Optional. Post ID or post object. Defaults to global $post.
+ *
+ * @return int|WP_Post|null|false The `$post_id` parameter on sucess, 0 otherwise.
+ */
+function wpcf7dtx_user_can_view_post($post_id = null)
+{
+    // Ensure we have a valid post id or null as functions allow, ACF context may pass boolean false as post id
+    $_post_id = is_int($post_id) || $post_id instanceof WP_Post ? $post_id : null;
+    if (
+        (is_post_publicly_viewable($_post_id) && !post_password_required($_post_id)) ||  // Allows publicly published posts of post types and status that are publicly visible that have no password or user can access the password protected post
+        current_user_can('edit_post', $_post_id) || // Allows anyone with edit access to this specific post (author, editor, admin, etc.)
+        (get_post_status($_post_id) == 'private' && current_user_can('read_private_posts')) // Allows anyone with private capability to read private post
+    ) {
+        return $post_id; // Return the original, unaltered post id
+    }
+    return 0;
+}
+
+/**
+ * Sanitize/Get Post ID
+ *
+ * Sanitizes the post id passed to the function. If omitted, it will get the current
+ * post or page id prioritizing the global `$post` object.
  *
  * @access private
  *
- * @param mixed $post_id
+ * @param int|string $post_id Optional. The post id to sanitize or a falsy value to
+ *      get the current post or page id.
+ * @param string $context Optional. The context in which type of value to return on
+ *      failure. Options are `acf` and `dtx`. Default is `dtx`.
  *
- * @return int An integer value of the passed post ID or the post ID of the current `$post` global object. 0 on Failure.
+ * @return int|false The post id on suceess. 0 on failure with `dtx` $context, boolean
+ *      false with `acf` $context.
  */
-function wpcf7dtx_get_post_id($post_id, $context = 'dtx')
+function wpcf7dtx_get_post_id($post_id = '', $context = 'dtx')
 {
     $post_id = $post_id ? intval(sanitize_text_field(strval($post_id))) : '';
     if (!$post_id || !is_numeric($post_id)) {
@@ -199,8 +254,11 @@ function wpcf7dtx_get_post_id($post_id, $context = 'dtx')
  * @param string $value The form tag value.
  * @param WPCF7_FormTag|false $tag Optional. Use to look up default value.
  * @param string $sanitize Optional. Specify type of sanitization. Default is `auto`.
- * @param string $option_name Optional. Specify an option from the $tag to retrieve and decode. Default is `value`.
- * @param string $option_pattern Optional. A regular expression pattern or one of the keys of preset patterns. If specified, only options whose value part matches this pattern will be returned.
+ * @param string $option_name Optional. Specify an option from the $tag to retrieve and
+ *      decode. Default is `value`.
+ * @param string $option_pattern Optional. A regular expression pattern or one of the
+ *      keys of preset patterns. If specified, only options whose value part matches
+ *      this pattern will be returned.
  *
  * @return string The dynamic output or the original value, not escaped or sanitized.
  */
@@ -411,11 +469,16 @@ function wpcf7dtx_input_html($atts)
  * @since 4.0.0
  *
  * @param array $atts An associative array of select input attributes.
- * @param string $label_text Optional. The text to display next to the checkbox or radio button.
- * @param bool $label_ui Optional. If true, will place input and label text inside a `<label>` element. Default is true.
- * @param bool $reverse Optional. If true, will reverse the order to display the text label first then the button. Has no effect if label text is empty. Default is false.
+ * @param string $label_text Optional. The text to display next to the checkbox or
+ *      radio button.
+ * @param bool $label_ui Optional. If true, will place input and label text inside
+ *      a `<label>` element. Default is true.
+ * @param bool $reverse Optional. If true, will reverse the order to display the
+ *      text label first then the button. Has no effect if label text is empty.
+ *      Default is false.
  *
- * @return string HTML output of the checkbox or radio button or empty string on failure.
+ * @return string HTML output of the checkbox or radio button or empty string on
+ *      failure.
  */
 function wpcf7dtx_checkbox_html($atts, $label_text = '', $label_ui = true, $reverse = false)
 {
@@ -467,8 +530,10 @@ function wpcf7dtx_checkbox_html($atts, $label_text = '', $label_ui = true, $reve
  * group's options. It also accepts a string value of HTML already formatted as options or
  * option groups. It also accepts a string value of a self-closing shortcode that is
  * evaluated and its output is either options or option groups.
- * @param bool $label_ui Optional. If true, will place input and label text inside a `<label>` element. Default is true.
- * @param bool $reverse Optional. If true, will reverse the order to display the text label first then the button. Has no effect if label text is empty. Default is false.
+ * @param bool $label_ui Optional. If true, will place input and label text inside a `<label>`
+ *      element. Default is true.
+ * @param bool $reverse Optional. If true, will reverse the order to display the text label
+ *      first then the button. Has no effect if label text is empty. Default is false.
  *
  * @return string HTML output of the checkbox or radio button or empty string on failure.
  */
@@ -624,15 +689,15 @@ function wpcf7dtx_options_html($options, $selected_value = '')
  *
  * @param array $atts An associative array of select input attributes.
  * @param array|string $options Accepts an associative array of key/value pairs to use as the
- * select option's value/label pairs. It also accepts an associative array of associative
- * arrays with the keys being used as option group labels and the array values used as that
- * group's options. It also accepts a string value of HTML already formatted as options or
- * option groups. It also accepts a string value of a self-closing shortcode that is
- * evaluated and its output is either options or option groups.
+ *      select option's value/label pairs. It also accepts an associative array of associative
+ *      arrays with the keys being used as option group labels and the array values used as that
+ *      group's options. It also accepts a string value of HTML already formatted as options or
+ *      option groups. It also accepts a string value of a self-closing shortcode that is
+ *      evaluated and its output is either options or option groups.
  * @param bool $hide_blank Optional. If true, the first blank placeholder option will have the
- * `hidden` attribute added to it. Default is false.
+ *      `hidden` attribute added to it. Default is false.
  * @param bool $disable_blank Optional. If true, the first blank placeholder option will have
- * the `disabled` attribute added to it. Default is false.
+ *      the `disabled` attribute added to it. Default is false.
  *
  * @return string HTML output of select field
  */
@@ -722,7 +787,7 @@ function wpcf7dtx_select_html($atts, $options, $hide_blank = false, $disable_bla
  * @param string|int $key The key to search for in the array.
  * @param array $array The array to search.
  * @param mixed $default The default value to return if not found or is empty. Default is
- * an empty string.
+ *      an empty string.
  *
  * @return mixed The value of the key found in the array if it exists or the value of
  * `$default` if not found or is empty.

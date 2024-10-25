@@ -3,7 +3,7 @@ Contributors: sevenspark, tessawatkinsllc
 Donate link: https://just1voice.com/donate/
 Tags: Contact Form 7, autofill, prepopulate, dynamic form, form field
 Tested up to: 6.6
-Stable tag: 4.5.0
+Stable tag: 4.5.1
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -392,10 +392,15 @@ Please check out the [FAQ on our website](https://aurisecreative.com/docs/contac
 
 == Upgrade Notice ==
 
-= 4.5.0 =
-Images can now be used in checkbox and radio buttons, textarea's placeholders work again, and the plugin version is submitted with form data. See [the changelog](https://plugins.trac.wordpress.org/browser/contact-form-7-dynamic-text-extension/trunk/changelog.txt) for more details.
+= 4.5.1 =
+Addressed security vulnerability #352992 responsibly reported by Francesco Carlucci to Wordfence. Thank you Carlucci. See [the changelog](https://plugins.trac.wordpress.org/browser/contact-form-7-dynamic-text-extension/trunk/changelog.txt) for more details.
 
 == Changelog ==
+
+= 4.5.1 =
+
+* Security: Addressed security vulnerability #352992 responsibly reported by Francesco Carlucci to Wordfence. Thank you Carlucci. All built-in shortcodes now check for appropriate access and user permissions before returning information from any post.
+* Translation: Added I18N improvements by alexclassroom, thanks!
 
 = 4.5.0 =
 
