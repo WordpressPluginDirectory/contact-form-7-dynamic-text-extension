@@ -2,8 +2,8 @@
 Contributors: sevenspark, tessawatkinsllc
 Donate link: https://just1voice.com/donate/
 Tags: Contact Form 7, autofill, prepopulate, dynamic form, form field
-Tested up to: 6.6
-Stable tag: 5.0.0
+Tested up to: 6.7
+Stable tag: 5.0.1
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -29,7 +29,7 @@ Contact Form 7 is an excellent WordPress plugin and one of the top choices of fr
 
 The possibilities are endless!
 
-(View Demo)[https://wordpress.org/plugins/contact-form-7-dynamic-text-extension/?preview=1]
+[View Demo](https://wordpress.org/plugins/contact-form-7-dynamic-text-extension/?preview=1)
 
 For over 10 years, DTX only handled `<input type="text" />` and `<input type="hidden" />` form fields, but version 4 finally introduces more:
 
@@ -392,10 +392,16 @@ Please check out the [FAQ on our website](https://aurisecreative.com/docs/contac
 
 == Upgrade Notice ==
 
-= 5.0.0 =
+= 5.0.1 =
 Contact Form 7 version 6.0 overhauled their form tag generator, so we followed suit with DTX 5.0! See [the changelog](https://plugins.trac.wordpress.org/browser/contact-form-7-dynamic-text-extension/trunk/changelog.txt) for more details.
 
 == Changelog ==
+
+= 5.0.1 =
+
+* Fix: updated the `wpcf7dtx_format_atts()` function to only include attributes with string values if the string exists to avoid adding empty attributes like `id` where they are supposed to be unique, [see support thread](https://wordpress.org/support/topic/exposure-of-sensitive-date-in-html/).
+* Update: updated getting dynamic attributes to be more consistent across handler functions.
+* Fix: Marked compatible with WordPress core version 6.7.
 
 = 5.0.0 =
 
@@ -416,10 +422,6 @@ Contact Form 7 version 6.0 overhauled their form tag generator, so we followed s
 
 * Fix: Addressed PHP warning for undefined variable $default_placeholder introduced in version 4.4.0, [see support thread](https://wordpress.org/support/topic/php-warning-undefined-variable-default_placeholder/)
 * Minor: Create preview link using WordPress Playground, [check it out](https://wordpress.org/plugins/contact-form-7-dynamic-text-extension/?preview=1)
-
-= 4.4.1 =
-
-* Fix: Addressed PHP warnings for undefined array keys introduced in version 4.4.0, [see support thread](https://wordpress.org/support/topic/tons-of-errors-in-error_log/)
 
 = Older Releases =
 

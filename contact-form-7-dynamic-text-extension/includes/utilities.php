@@ -290,6 +290,83 @@ function wpcf7dtx_get_dynamic($value, $tag = false, $sanitize = 'auto', $option_
 }
 
 /**
+ * Get Dynamic Attribute
+ *
+ * @since 5.0.1
+ *
+ * @param string $option_name Specify an option from the $tag to retrieve and decode.
+ * @param WPCF7_FormTag $tag Use to look up default value.
+ * @param string $sanitize Optional. Specify type of sanitization. Default is `auto`.
+ * @param string $basetype Optional. Specify a basetype to use in the class instead
+ *      of what is in the tag.
+ * @param string $option_pattern Optional. A regular expression pattern or one of the
+ *      keys of preset patterns. If specified, only options whose value part matches
+ *      this pattern will be returned.
+ *
+ * @return string The dynamic output or the original value, not escaped or sanitized.
+ */
+function wpcf7dtx_get_dynamic_attr($option_name, $tag, $sanitize = 'auto', $basetype = '', $option_pattern = '')
+{
+    if ($option_name !== 'class') {
+        $value = $tag->get_option($option_name, $option_pattern, true);
+        if ($value === false) {
+            return '';
+        }
+        return wpcf7dtx_dynamic_attr($value, $sanitize);
+    }
+    $values = array();
+    if ($option_name == 'class') {
+        $type = trim(sanitize_key($basetype ? $basetype : str_replace(array('dynamic_', 'dynamic'), '', $tag->basetype)));
+        $values = explode(' ', wpcf7_form_controls_class($type));
+        $values[] = 'wpcf7dtx';
+        $values[] = sanitize_html_class('wpcf7dtx-' . $type);
+
+        // Client-side validation by type
+        switch ($type) {
+            case 'range':
+                $values[] =  'wpcf7-validates-as-number';
+                break;
+            case 'date':
+            case 'number':
+            case 'email':
+            case 'url':
+            case 'tel':
+                $values[] =  sanitize_html_class('wpcf7-validates-as-' . $type);
+                break;
+            case 'submit':
+                $values[] = 'has-spinner';
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Add in the user-added possibly dynamic user values
+    $classes = $tag->get_option($option_name, $option_pattern, false);
+    if (is_array($classes)) {
+        foreach ($classes as $class) {
+            $values[] = wpcf7dtx_dynamic_attr($class, $sanitize);
+        }
+    }
+    return $values;
+}
+
+/**
+ * Decode and Evaluate Dynamic Attribute
+ *
+ * @since 5.0.1
+ *
+ * @param string $value The value of the attribute.
+ * @param string $sanitize Optional. Specify type of sanitization. Default is `auto`.
+ *
+ * @param string The dynamic output or the original value, not escaped or sanitized.
+ */
+function wpcf7dtx_dynamic_attr($value, $sanitize = 'auto')
+{
+    return wpcf7dtx_get_dynamic(html_entity_decode(urldecode(strval($value)), ENT_QUOTES), false, $sanitize); // Get dynamic attribute
+}
+
+/**
  * Get Allowed HTML for Form Field Properties
  *
  * @see https://www.w3schools.com/tags/tag_input.asp
@@ -310,52 +387,52 @@ function wpcf7dtx_get_allowed_field_properties($type = 'text', $extra = array())
     if (in_array($type, array('option', 'optgroup'))) {
         return array(
             'optgroup' => array(
-                'label' => array(),
-                'disabled' => array(),
-                'hidden' => array()
+                'label' => true,
+                'disabled' => true,
+                'hidden' => true
             ),
             'option' => array(
-                'value' => array(),
-                'selected' => array(),
-                'disabled' => array(),
-                'hidden' => array()
+                'value' => true,
+                'selected' => true,
+                'disabled' => true,
+                'hidden' => true
             )
         );
     }
     $allowed_properties = array(
         // Global properties
-        'type' => array(),
-        'id' => array(),
-        'name' => array(),
-        'value' => array(),
-        'class' => array(),
-        'disabled' => array(),
-        'tabindex' => array(),
-        'title' => array(),
+        'type' => true,
+        'id' => true,
+        'name' => true,
+        'value' => true,
+        'class' => true,
+        'disabled' => true,
+        'tabindex' => true,
+        'title' => true,
         // ARIA properties
-        'aria-invalid' => array(),
-        'aria-describedby' => array(),
+        'aria-invalid' => true,
+        'aria-describedby' => true,
         // DTX properties
-        'data-dtx-value' => array(),
+        'data-dtx-value' => true,
     );
     if ($type != 'hidden') {
-        $allowed_properties['autofocus'] = array();
-        $allowed_properties['readonly'] = array();
-        $allowed_properties['required'] = array();
+        $allowed_properties['autofocus'] = true;
+        $allowed_properties['readonly'] = true;
+        $allowed_properties['required'] = true;
     }
     if (in_array($type, array('checkbox', 'radio', 'acceptance'))) {
         // Properties exclusive to checkboxes and radio buttons
-        $allowed_properties['checked'] = array();
-        $allowed_properties['dtx-default'] = array();
+        $allowed_properties['checked'] = true;
+        $allowed_properties['dtx-default'] = true;
     } elseif ($type == 'select') {
         // Properties exclusive to select fields
-        $allowed_properties['size'] = array();
-        $allowed_properties['multiple'] = array();
-        $allowed_properties['dtx-default'] = array();
+        $allowed_properties['size'] = true;
+        $allowed_properties['multiple'] = true;
+        $allowed_properties['dtx-default'] = true;
         unset($allowed_properties['type'], $allowed_properties['value']); // Remove invalid select attributes
     } elseif ($type == 'label') {
         // Properties exclusive to label elements
-        $allowed_properties['for'] = array();
+        $allowed_properties['for'] = true;
         // Remove invalid label attributes
         unset(
             $allowed_properties['type'],
@@ -366,40 +443,40 @@ function wpcf7dtx_get_allowed_field_properties($type = 'text', $extra = array())
         );
     } else {
         // Properties exclusive to text-based inputs
-        $allowed_properties['autocapitalize'] = array();
-        $allowed_properties['autocomplete'] = array();
-        $allowed_properties['list'] = array();
+        $allowed_properties['autocapitalize'] = true;
+        $allowed_properties['autocomplete'] = true;
+        $allowed_properties['list'] = true;
 
         // Placeholder
         if (in_array($type, array('text', 'textarea', 'search', 'url', 'tel', 'email', 'password', 'number'))) {
-            $allowed_properties['placeholder'] = array();
+            $allowed_properties['placeholder'] = true;
         }
 
         // Textarea
         if ($type == 'textarea') {
             // Additional properties exclusive to textarea fields
-            $allowed_properties['cols'] = array();
-            $allowed_properties['rows'] = array();
-            $allowed_properties['minlength'] = array();
-            $allowed_properties['maxlength'] = array();
-            $allowed_properties['wrap'] = array();
+            $allowed_properties['cols'] = true;
+            $allowed_properties['rows'] = true;
+            $allowed_properties['minlength'] = true;
+            $allowed_properties['maxlength'] = true;
+            $allowed_properties['wrap'] = true;
             unset($allowed_properties['type'], $allowed_properties['value']); // Remove invalid textarea attributes
         } elseif (in_array($type, array('text', 'search', 'url', 'tel', 'email', 'password'))) {
             // Additional properties exclusive to these text-based fields
-            $allowed_properties['size'] = array();
-            $allowed_properties['minlength'] = array();
-            $allowed_properties['maxlength'] = array();
-            $allowed_properties['pattern'] = array();
+            $allowed_properties['size'] = true;
+            $allowed_properties['minlength'] = true;
+            $allowed_properties['maxlength'] = true;
+            $allowed_properties['pattern'] = true;
         } elseif (in_array($type, array('number', 'range', 'date', 'datetime-local', 'time'))) {
             // Number and date inputs
-            $allowed_properties['min'] = array();
-            $allowed_properties['max'] = array();
-            $allowed_properties['step'] = array();
+            $allowed_properties['min'] = true;
+            $allowed_properties['max'] = true;
+            $allowed_properties['step'] = true;
         }
     }
     if (is_array($extra) && count($extra)) {
         foreach ($extra as $property) {
-            $allowed_properties[sanitize_title($property)] = array();
+            $allowed_properties[sanitize_title($property)] = true;
         }
     }
     return $allowed_properties;
@@ -407,6 +484,10 @@ function wpcf7dtx_get_allowed_field_properties($type = 'text', $extra = array())
 
 /**
  * Returns a formatted string of HTML attributes
+ *
+ * Boolean attributes are set to themselves if the value is a boolean itself
+ * or if the key is checked, disabled, multiple, readonly, required, or selected.
+ * The value of the key class can be array for sanitizing.
  *
  * @since 4.0.0
  *
@@ -427,7 +508,7 @@ function wpcf7dtx_format_atts($atts)
             'selected'
         );
         foreach ($atts as $key => $value) {
-            $key = sanitize_key(strval($key));
+            $key = trim(sanitize_title($key));
             if ($key) {
                 if ($key == 'class' && is_array($value)) {
                     $sanitized_atts['class'] = array();
@@ -443,16 +524,16 @@ function wpcf7dtx_format_atts($atts)
                     if ($value) {
                         $sanitized_atts[$key] = $key;
                     }
-                } elseif (is_numeric($value) || is_string($value)) {
-                    // Allow all numbers and strings, even if falsy
+                } elseif (is_numeric($value) || (is_string($value) && $value)) {
+                    // Allow all numbers (even if falsey) and strings (only if value)
                     $sanitized_atts[$key] = $value;
                 }
             }
         }
         if (count($sanitized_atts)) {
             $output = array();
-            foreach ($sanitized_atts as $key => $value) {
-                $output[] = sprintf('%s="%s"', esc_attr($key), esc_attr($value));
+            foreach ($sanitized_atts as $sanitized_key => $sanitized_value) {
+                $output[] = sprintf('%s="%s"', esc_attr($sanitized_key), esc_attr($sanitized_value));
             }
             return implode(' ', $output);
         }
@@ -471,7 +552,7 @@ function wpcf7dtx_format_atts($atts)
  */
 function wpcf7dtx_input_html($atts)
 {
-    return sprintf('<input %s />', wpcf7dtx_format_atts($atts));
+    return sprintf('<input %s>', wpcf7dtx_format_atts($atts));
 }
 
 /**

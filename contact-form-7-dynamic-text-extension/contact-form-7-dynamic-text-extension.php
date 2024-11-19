@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Contact Form 7 - Dynamic Text Extension
  * Description: Extends Contact Form 7 by adding dynamic form fields that accepts shortcodes to prepopulate form fields with default values and dynamic placeholders.
- * Version: 5.0.0
+ * Version: 5.0.1
  * Text Domain: contact-form-7-dynamic-text-extension
  * Author: AuRise Creative, SevenSpark
  * Author URI: https://aurisecreative.com
@@ -32,7 +32,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-define('WPCF7DTX_VERSION', '5.0.0'); // Define current version of DTX
+define('WPCF7DTX_VERSION', '5.0.1'); // Define current version of DTX
 define('WPCF7DTX_MINVERSION_MAILVALIDATION', '5.7'); // The minimum version of CF7 required to use mail validator
 define('WPCF7DTX_MINVERSION_TAGGEN', '6.0'); // The minimum version of CF7 required to use tag generator
 defined('WPCF7DTX_DIR') || define('WPCF7DTX_DIR', __DIR__); // Define root directory
@@ -397,13 +397,11 @@ function wpcf7dtx_shortcode_handler($tag)
 
     //Configure input attributes
     $atts = array();
-    $atts['type'] = sanitize_key(str_replace(array('dynamic_', 'dynamic'), '', $tag->basetype));
+    $atts['type'] = trim(sanitize_key(str_replace(array('dynamic_', 'dynamic'), '', $tag->basetype)));
     $atts['name'] = $tag->name;
-    $atts['id'] = strval($tag->get_id_option());
-    $atts['tabindex'] = $tag->get_option('tabindex', 'signed_int', true);
-    $atts['class'] = explode(' ', wpcf7_form_controls_class($atts['type']));
-    $atts['class'][] = 'wpcf7dtx';
-    $atts['class'][] = sanitize_html_class('wpcf7dtx-' . $atts['type']);
+    $atts['id'] = wpcf7dtx_get_dynamic_attr('id', $tag, 'text');
+    $atts['tabindex'] = wpcf7dtx_get_dynamic_attr('tabindex', $tag, 'text', $atts['type'], 'signed_int');
+    $atts['class'] = wpcf7dtx_get_dynamic_attr('class', $tag, 'text', $atts['type']);
     if ($validation_error) {
         $atts['class'][] = 'wpcf7-not-valid';
         $atts['aria-invalid'] = 'true';
@@ -428,16 +426,12 @@ function wpcf7dtx_shortcode_handler($tag)
     foreach ($dynamic_atts as $dynamic_att) {
         // Don't override existing attributes
         if (!array_key_exists($dynamic_att, $atts) && $tag->has_option($dynamic_att)) {
-            switch ($dynamic_att) {
-                default:
-                    $atts[$dynamic_att] = wpcf7dtx_get_dynamic(false, $tag, 'text', $dynamic_att); // Get dynamic attribute
-                    if ($atts[$dynamic_att] === '') {
-                        $atts[$dynamic_att] = $dynamic_att;  // Empty values are valid since boolean values just need to exist
-                    }
-                    if ($atts[$dynamic_att] !== $dynamic_att) {
-                        unset($atts[$dynamic_att]); // Remove attribute if it doesn't equal it's own name
-                    }
-                    break;
+            $atts[$dynamic_att] = wpcf7dtx_get_dynamic_attr($dynamic_att, $tag, 'text');
+            if ($atts[$dynamic_att] === '') {
+                $atts[$dynamic_att] = $dynamic_att;  // Empty values are valid since boolean values just need to exist
+            }
+            if ($atts[$dynamic_att] !== $dynamic_att) {
+                unset($atts[$dynamic_att]); // Remove attribute if it doesn't equal it's own name
             }
         }
     }
@@ -449,10 +443,9 @@ function wpcf7dtx_shortcode_handler($tag)
     // Identify placeholder
     if ($tag->has_option('placeholder') || $tag->has_option('watermark')) {
         //Reverse engineer what JS did (converted quotes to HTML entities --> URL encode) then sanitize
-        $placeholder = html_entity_decode(urldecode($tag->get_option('placeholder', '', true)), ENT_QUOTES);
+        $placeholder = wpcf7dtx_get_dynamic_attr('placeholder', $tag);
         if ($placeholder) {
             // If a different placeholder text has been specified, set both attributes
-            $placeholder = wpcf7dtx_get_dynamic($placeholder, false, $sanitize_type);
             $atts['placeholder'] = $placeholder;
             $atts['value'] = $value;
         } else {
@@ -484,7 +477,7 @@ function wpcf7dtx_shortcode_handler($tag)
          * Configuration for selection-based fields
          */
         if ($tag->has_option('default')) {
-            $atts['dtx-default'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('default', '', true)), ENT_QUOTES));
+            $atts['dtx-default'] = wpcf7dtx_get_dynamic_attr('default', $tag);
         }
 
         // Get options for selection-based fields
@@ -505,7 +498,7 @@ function wpcf7dtx_shortcode_handler($tag)
             $atts['placeholder'] = wpcf7dtx_array_has_key('placeholder', $atts, __('&#8212;Please choose an option&#8212;', 'contact-form-7-dynamic-text-extension'));
         }
         if ($atts['type'] == 'select') {
-            $atts['size'] = wpcf7dtx_get_dynamic(false, $tag, 'text', 'size'); // Get dynamic attribute
+            $atts['size'] = wpcf7dtx_get_dynamic_attr('size', $tag, 'text');
             if ($atts['size'] === '') {
                 $atts['size'] = $tag->get_size_option('1'); // Set default value
             }
@@ -521,7 +514,7 @@ function wpcf7dtx_shortcode_handler($tag)
         foreach ($dynamic_atts as $dynamic_att) {
             // Don't override existing attributes
             if (!array_key_exists($dynamic_att, $atts) && $tag->has_option($dynamic_att)) {
-                $atts[$dynamic_att] = wpcf7dtx_get_dynamic(false, $tag, 'text', $dynamic_att); // Get dynamic attribute
+                $atts[$dynamic_att] = wpcf7dtx_get_dynamic_attr($dynamic_att, $tag, 'text');
                 switch ($dynamic_att) {
                     case 'autocapitalize':
                         if (!in_array($atts[$dynamic_att], array('none', 'off', 'on', 'sentences', 'words', 'characters'))) {
@@ -602,28 +595,14 @@ function wpcf7dtx_shortcode_handler($tag)
         if (array_key_exists('max', $atts) && array_key_exists('min', $atts) && is_numeric($atts['max']) && is_numeric($atts['min']) && floatval($atts['max']) < floatval($atts['min'])) {
             unset($atts['max'], $atts['min']);
         }
-
-        // Client-side validation by type
-        switch ($atts['type']) {
-            case 'range':
-                $atts['class'][] =  'wpcf7-validates-as-number';
-                break;
-            case 'date':
-            case 'number':
-            case 'email':
-            case 'url':
-            case 'tel':
-                $atts['class'][] =  sanitize_html_class('wpcf7-validates-as-' . $atts['type']);
-                break;
-        }
     }
-
-    // Wrap up class attribute
-    $atts['class'] = $tag->get_class_option($atts['class']);
 
     // Output the form field HTML
     $wrapper = '<span class="wpcf7-form-control-wrap %1$s" data-name="%1$s">%2$s%3$s</span>';
-    $allowed_html = array('br' => array(), 'span' => array('id' => array(), 'class' => array(), 'data-name' => array(), 'aria-hidden' => array()));
+    $allowed_html = array(
+        'br' => true,
+        'span' => array('id' => true, 'class' => true, 'data-name' => true, 'aria-hidden' => true)
+    );
     switch ($atts['type']) {
         case 'checkbox':
         case 'radio':
@@ -640,8 +619,8 @@ function wpcf7dtx_shortcode_handler($tag)
                 $validation_error,
                 $atts['id'] ? sprintf(' id="%s"', esc_attr($atts['id'])) : ''
             ), array_merge($allowed_html, array(
-                'label' => array('for' => array()),
-                'image' => array('src' => array(), 'alt' => array(), 'title' => array(), 'class' => array(), 'id' => array(), 'style' => array(), 'width' => array(), 'height' => array(), 'loading' => array(), 'longdesc' => array(), 'sizes' => array(), 'srcset' => array()),
+                'label' => array('for' => true),
+                'img' => array('src' => true, 'alt' => true, 'title' => true, 'class' => true, 'id' => true, 'style' => true, 'width' => true, 'height' => true, 'loading' => true, 'longdesc' => true, 'sizes' => true, 'srcset' => true),
                 'input' => wpcf7dtx_get_allowed_field_properties($atts['type'])
             )));
         case 'select':
@@ -693,16 +672,11 @@ function wpcf7dtx_button_shortcode_handler($tag)
 {
     //Configure input attributes
     $atts = array();
-    $atts['type'] = sanitize_key(str_replace('dynamic_', '', $tag->basetype));
-    $atts['id'] = strval($tag->get_id_option());
-    $atts['tabindex'] = $tag->get_option('tabindex', 'signed_int', true);
+    $atts['type'] = trim(sanitize_key(str_replace('dynamic_', '', $tag->basetype)));
+    $atts['id'] = wpcf7dtx_get_dynamic_attr('id', $tag, 'text');
+    $atts['tabindex'] = wpcf7dtx_get_dynamic_attr('tabindex', $tag, 'text', $atts['type'], 'signed_int');
+    $atts['class'] = wpcf7dtx_get_dynamic_attr('class', $tag, 'text', $atts['type']);
     $atts['value'] = wpcf7dtx_get_dynamic(false, $tag); // Evaluate the dynamic value
-    $atts['class'] = explode(' ', wpcf7_form_controls_class($atts['type']));
-    $atts['class'][] = 'wpcf7dtx';
-    $atts['class'][] = sanitize_html_class('wpcf7dtx-' . $atts['type']);
-    if ($atts['type'] == 'submit') {
-        $atts['class'][] = 'has-spinner';
-    }
 
     // Default value if empty
     if (empty($atts['value'])) {
@@ -730,9 +704,6 @@ function wpcf7dtx_button_shortcode_handler($tag)
         }
     }
 
-    // Wrap up class attribute
-    $atts['class'] = $tag->get_class_option($atts['class']);
-
     // Output the form field HTML
     return wp_kses(
         wpcf7dtx_input_html($atts),
@@ -751,13 +722,13 @@ function wpcf7dtx_label_shortcode_handler($tag)
 {
     $atts = array();
     $atts['id'] = strval($tag->get_id_option());
-    $atts['class'] = wpcf7_form_controls_class('wpcf7dtx wpcf7dtx-label');
-    $atts['for'] = wpcf7dtx_get_dynamic(html_entity_decode(urldecode($tag->get_option('for', '', true)), ENT_QUOTES)); // Get dynamic attribute
+    $atts['class'] = wpcf7dtx_get_dynamic_attr('class', $tag, 'text', 'label');
+    $atts['for'] = wpcf7dtx_get_dynamic_attr('for', $tag, 'text');
 
     // Page load attribute
     if ($tag->has_option('dtx_pageload') && is_array($tag->raw_values) && count($tag->raw_values)) {
         $atts['data-dtx-value'] = rawurlencode(sanitize_text_field($tag->raw_values[0]));
-        $atts['class'] .= ' dtx-pageload';
+        $atts['class'][] = 'dtx-pageload';
         if (wp_style_is('wpcf7dtx', 'registered') && !wp_script_is('wpcf7dtx', 'queue')) {
             // If already registered, just enqueue it
             wp_enqueue_script('wpcf7dtx');
@@ -767,9 +738,6 @@ function wpcf7dtx_label_shortcode_handler($tag)
             wp_enqueue_script('wpcf7dtx');
         }
     }
-
-    // Wrap up class attribute
-    $atts['class'] = $tag->get_class_option($atts['class']);
 
     // Output the form field HTML
     return wp_kses(
