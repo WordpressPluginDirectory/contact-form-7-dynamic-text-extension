@@ -3,7 +3,7 @@ Contributors: sevenspark, tessawatkinsllc
 Donate link: https://just1voice.com/donate/
 Tags: Contact Form 7, autofill, prepopulate, dynamic form, form field
 Tested up to: 6.7
-Stable tag: 5.0.1
+Stable tag: 5.0.3
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -392,10 +392,18 @@ Please check out the [FAQ on our website](https://aurisecreative.com/docs/contac
 
 == Upgrade Notice ==
 
-= 5.0.1 =
-Contact Form 7 version 6.0 overhauled their form tag generator, so we followed suit with DTX 5.0! See [the changelog](https://plugins.trac.wordpress.org/browser/contact-form-7-dynamic-text-extension/trunk/changelog.txt) for more details.
+= 5.0.3 =
+Hopefully addressed the `Function _load_textdomain_just_in_time was called incorrectly` notice added in WordPress core version 6.7 triggered by this plugin. See [the changelog](https://plugins.trac.wordpress.org/browser/contact-form-7-dynamic-text-extension/trunk/changelog.txt) for more details.
 
 == Changelog ==
+
+= 5.0.3 =
+
+* Fix: Moved settings translations to load as needed instead of immediately hoping to address the `Function _load_textdomain_just_in_time was called incorrectly` notice added in WordPress core version 6.7, [see support thread](https://wordpress.org/support/topic/https://wordpress.org/support/topic/error-loading-textdomain-since-wp-6-7/).
+
+= 5.0.2 =
+
+* Security: Addressed security vulnerability responsibly reported by Rafie Muhammad to Patchstack.
 
 = 5.0.1 =
 
@@ -411,17 +419,6 @@ Contact Form 7 version 6.0 overhauled their form tag generator, so we followed s
 
 * Security: Addressed security vulnerability #352992 responsibly reported by Francesco Carlucci to Wordfence. Thank you Carlucci. All built-in shortcodes now check for appropriate access and user permissions before returning information from any post.
 * Translation: Added I18N improvements by alexclassroom, thanks!
-
-= 4.5.0 =
-
-* Feature: Added the hidden field `_wpcf7dtx_version` to include the current version of this plugin automatically in forms. It can be accessed via `$_POST` in `wpcf7_before_send_mail` hook or viewed in the page's source code along with Contact Form 7's other default hidden fields.
-* Minor: Allowed images to be added in checkbox and radio button options, [see support thread](https://wordpress.org/support/topic/allow-images-in-radio-button-options/).
-* Fix: Addressed the bug that prevented textarea fields to use placeholders, [see support thread](https://wordpress.org/support/topic/dynamic_textarea-placeholder-not-working/).
-
-= 4.4.2 =
-
-* Fix: Addressed PHP warning for undefined variable $default_placeholder introduced in version 4.4.0, [see support thread](https://wordpress.org/support/topic/php-warning-undefined-variable-default_placeholder/)
-* Minor: Create preview link using WordPress Playground, [check it out](https://wordpress.org/plugins/contact-form-7-dynamic-text-extension/?preview=1)
 
 = Older Releases =
 
